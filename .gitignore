@@ -1,0 +1,6 @@
+# Datasets
+data/
+
+# Python
+*.egg-info/
+__pycache__/
