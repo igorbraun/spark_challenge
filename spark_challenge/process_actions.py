@@ -19,9 +19,7 @@ def main():
     events = read_event_data(events_path=args.events_path)
 
     print("Aggregated events:")
-    aggregated_events = (
-        reduce_events_granularity_to_10_min(events).sort("window_start").cache()
-    )
+    aggregated_events = reduce_events_granularity_to_10_min(events).cache()
     aggregated_events.show(5)
     """
     +-----+----+-------------------+-------------------+
@@ -58,7 +56,7 @@ def main():
     """
 
     print("Row with maximum of open actions:")
-    max_open_actions_window = find_window_with_max_open_actions(aggregated_events)
+    max_open_actions_window = find_window_with_max_open_actions(aggregated_events, 10)
     max_open_actions_window.show()
     """
     print(max_open_actions_window.show())
@@ -66,6 +64,15 @@ def main():
     |Close|Open|       window_start|         window_end|
     +-----+----+-------------------+-------------------+
     |  189| 185|2016-07-26 22:10:00|2016-07-26 22:20:00|
+    |  160| 184|2016-07-27 17:00:00|2016-07-27 17:10:00|
+    |  170| 184|2016-07-27 02:00:00|2016-07-27 02:10:00|
+    |  164| 184|2016-07-27 09:40:00|2016-07-27 09:50:00|
+    |  165| 184|2016-07-27 10:20:00|2016-07-27 10:30:00|
+    |  210| 184|2016-07-27 22:50:00|2016-07-27 23:00:00|
+    |  173| 182|2016-07-27 15:20:00|2016-07-27 15:30:00|
+    |  152| 182|2016-07-27 16:30:00|2016-07-27 16:40:00|
+    |  164| 182|2016-07-27 08:50:00|2016-07-27 09:00:00|
+    |  177| 180|2016-07-27 07:40:00|2016-07-27 07:50:00|
     +-----+----+-------------------+-------------------+
     """
 
@@ -108,9 +115,11 @@ def compute_total_avg_actions_number(aggregated_events: DataFrame) -> DataFrame:
     return aggregated_events_with_total_actions.agg({"total_actions_per_10_min": "avg"})
 
 
-def find_window_with_max_open_actions(aggregated_events: DataFrame) -> DataFrame:
+def find_window_with_max_open_actions(
+    aggregated_events: DataFrame, required_max_entries: int = 1
+) -> DataFrame:
     """Returns the 10 minutes window with the max number of open actions"""
-    return aggregated_events.orderBy(col("Open").desc()).limit(1)
+    return aggregated_events.orderBy(col("Open").desc()).limit(required_max_entries)
 
 
 if __name__ == "__main__":

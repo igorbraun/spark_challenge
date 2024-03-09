@@ -1,0 +1,44 @@
+image: python:3.11.6-bookworm
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: always
+
+cache:
+  paths:
+    - .cache/pip
+
+before_script:
+  - apt-get install openjdk-18-jre -y
+  - poetry config virtualenvs.in-project true
+  - poetry install
+
+precommit-checks:
+  stage: test
+  script:
+    - pip install pre-commit
+    - pre-commit run --all-files
+
+pytest:
+  stage: test
+  script:
+    - pip install --editable ".[test]"
+    - pytest
+
+build-deploy-tag:
+  when: manual
+  stage: deploy
+  script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - export LATEST_GIT_TAG=`git describe --tags --abbrev=0`
+    - export NEW_VERSION=`python helper_scripts/increment_minor_version.py --git_tag_version $LATEST_GIT_TAG`
+    - poetry version $NEW_VERSION
+    - poetry build
+    - poetry config repositories.gitlab "https://$CI_SERVER_HOST/api/v4/projects/$CI_PROJECT_ID/packages/pypi"
+    - poetry config http-basic.gitlab gitlab-ci-token "$CI_JOB_TOKEN"
+    - poetry publish --repository gitlab
+    - git tag $NEW_VERSION
+    - git push --tags "https://oauth2:$CI_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git" HEAD:main
