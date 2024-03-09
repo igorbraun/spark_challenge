@@ -18,13 +18,11 @@ before_script:
 precommit-checks:
   stage: test
   script:
-    - pip install pre-commit
     - pre-commit run --all-files
 
 pytest:
   stage: test
   script:
-    - pip install --editable ".[test]"
     - pytest
 
 build-deploy-tag:
@@ -41,4 +39,4 @@ build-deploy-tag:
     - poetry config http-basic.gitlab gitlab-ci-token "$CI_JOB_TOKEN"
     - poetry publish --repository gitlab
     - git tag $NEW_VERSION
-    - git push --tags "https://oauth2:$CI_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git" HEAD:main
+    - git push --tags "https://oauth2:$CI_ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git" HEAD:master
