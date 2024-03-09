@@ -38,7 +38,7 @@ In order to ensure that the code is formatted accordingly to the modern standard
 
 
 ### ETL Challange
-You are working with a PURCHASES table in a transactional database that is updated daily. Your task is to design a process to migrate this data into a Lakehouse or Data Warehouse, ensuring that historical changes are preserved through versioning. **This includes new records and any modifications to existing records.**
+You are working with a PURCHASES table in a transactional database that is updated daily. Your task is to design a process to migrate this data into a Lakehouse or Data Warehouse, ensuring that historical changes are preserved through versioning. This includes new records and any modifications to existing records.
 
 Source Table Snapshot for Today:
 | PurchaseID        | product  | user  |date   |
@@ -83,3 +83,26 @@ Source Table Snapshot for Tomorrow:
 
 
 ### Data Pipeline
+#### **Description**
+We are tasked with creating a dynamic data pipeline to manage and process data from multiple sensors installed on a fleet of trucks. The sensors record various types of data, but their transmission is not continuous or on a fixed schedule some sensors send data sporadically at different intervals, not necessarily every second.
+
+The data pipeline should be flexible and capable of handling these intermittent and variable data streams, including the ability to integrate new types of sensor data as operational needs evolve or as sensor systems are updated. The pipeline should automatically adjust to these changes without manual oversight.
+
+#### **Current Setup**
+- Each truck is equipped with a set of 10 sensors (to start with).
+- Data collected includes a timestamp and values from each sensor.
+- The collection frequency varies, and new sensor parameters may be added without notice.
+
+
+#### **Tasks / Answers**
+#### What is the term used to describe the unpredictable introduction of new data parameters in such a system?
+  - **Schema evolution** describes changing of the schema over time.
+
+#### Propose a resilient storage solution for this data that can handle sporadic updates and new parameter integration without manual intervention. Outline the approach.
+  - The data can be stored as a delta table with the schema evolution enabled. To enable the schema evolution, one has to add the mergeSchema option: `.option("mergeSchema", "true")`. The whole command to append the newly processed fleet sensors data could look as follows:
+  `fleet_sensors_data.write.format("delta").option("mergeSchema", "true").mode("append").save(path_to_fleed_sensors_data)`.
+  If a new column was added in the newly processed data, it will also be added to the delta table without manual intervetion.
+
+#### What are advantages and disadvantages?
+  - **Advantages** Schema evolution allows data schema to change and still be processed with the same pipeline without manual interventions. With the proposed delta mergeSchema option, the schema of the table changes without doing a full data rewrite.
+  - **Disadvantages**  If one needs to track if and when columns were introduced, there is additional work to do. Also, the schema enforcement guarantees are not hold anymore. With schema evolution enabled, allows source data to have new columns and beliefs, that these are also meaningful and have the expected format. To ensure it programmatically, more checks are required. There is also a risk, that the downstream processes break after introducing a new column. So, even more processes need to be considered to be reliable.
