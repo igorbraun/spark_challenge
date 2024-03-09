@@ -2,14 +2,21 @@ from pyspark.sql.dataframe import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, TimestampType, StringType
 from pyspark.sql.functions import col, window
+import argparse
 
 spark = SparkSession.builder.getOrCreate()
 
 
 def main():
-    EVENTS_PATH = "/home/igor/spark_challenge/data/events.csv"
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-events_path",
+        type=str,
+        default="/home/igor/spark_challenge/data/events.csv",
+    )
+    args = parser.parse_args()
 
-    events = read_event_data(events_path=EVENTS_PATH)
+    events = read_event_data(events_path=args.events_path)
 
     print("Aggregated events:")
     aggregated_events = (
