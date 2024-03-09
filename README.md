@@ -38,7 +38,6 @@ In order to ensure that the code is formatted accordingly to the modern standard
 
 
 ### ETL Challange
-You are working with a PURCHASES table in a transactional database that is updated daily. Your task is to design a process to migrate this data into a Lakehouse or Data Warehouse, ensuring that historical changes are preserved through versioning. This includes new records and any modifications to existing records.
 
 Source Table Snapshot for Today:
 | PurchaseID        | product  | user  |date   |
@@ -83,17 +82,6 @@ Source Table Snapshot for Tomorrow:
 
 
 ### Data Pipeline
-#### **Description**
-We are tasked with creating a dynamic data pipeline to manage and process data from multiple sensors installed on a fleet of trucks. The sensors record various types of data, but their transmission is not continuous or on a fixed schedule some sensors send data sporadically at different intervals, not necessarily every second.
-
-The data pipeline should be flexible and capable of handling these intermittent and variable data streams, including the ability to integrate new types of sensor data as operational needs evolve or as sensor systems are updated. The pipeline should automatically adjust to these changes without manual oversight.
-
-#### **Current Setup**
-- Each truck is equipped with a set of 10 sensors (to start with).
-- Data collected includes a timestamp and values from each sensor.
-- The collection frequency varies, and new sensor parameters may be added without notice.
-
-
 #### **Tasks / Answers**
 #### What is the term used to describe the unpredictable introduction of new data parameters in such a system?
   - **Schema evolution** describes changing of the schema over time.
