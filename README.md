@@ -38,6 +38,48 @@ In order to ensure that the code is formatted accordingly to the modern standard
 
 
 ### ETL Challange
+You are working with a PURCHASES table in a transactional database that is updated daily. Your task is to design a process to migrate this data into a Lakehouse or Data Warehouse, ensuring that historical changes are preserved through versioning. **This includes new records and any modifications to existing records.**
+
+Source Table Snapshot for Today:
+| PurchaseID        | product  | user  |date   |
+| :---------------- | :------: | :----:|----:  |
+| 1002313003        |   12   | 1003431 | 2022-05-20 |
+| 1002313002        |   13   | 1003432 | 2021-06-19 |
+| 1002313004        |   14   | 1003433 | 2023-07-21 |
+
+
+Source Table Snapshot for Tomorrow:
+| PurchaseID        | product  | user  |date   |
+| :---------------- | :------: | :----:|----:  |
+| 1002313003        |   12   | 1003431 | 2022-05-20 |
+| 1002313002        |   13   | 1003432 | 2021-06-19 |
+| 1002313004        |   10   | 1003433 | 2023-07-22 |
+| 1002313005        |   15   | 1003434 | 2023-07-22 |
+
+
+- Structuring the data lakehouse / data lake storage
+  - **Tables** In this case, two tables would be created. The first one is the **raw.purchases** table containing the source data as it is and the table **stage.purchases** containing the modified data in the stage layer.
+  - **Folders** This data set can be partitioned by date, e.g. the whole foulder structure would have the form `purchases/year/month/day`
+  - **Layers:** I would use classic 3-layers architecture, e.g. raw / stage / mart. The source table would first be loaded into the raw layer. The processed data will then be loaded in the stage layer and the  dashboard data will then be loaded in the mart layer.
+  - **Files** The tables would be saved in the delta format to get, among others, the ACID and time travel features.
+  - **Naming conventions** Generally, I would follow the naming conventions in the organization. If I would set them on my own, I would use eather snake_case or PascalCase for the table names. The names should also be as short and descriptive as possible.
+
+- Ingesting and saving the source data in the data lake storage
+  - To ingest data I would use the Azure tools suited for it, e.g. Copy activity or Data Mapping tool of the Azure Synapse. For every snapshot there will be a folder. Assuming daily snapshots, there will be the structure `raw:/purchases/year/month/day` where `raw` is the container name.
+
+- Processing and transforming the source data.
+  - **Data validation** First, some validation steps are required to check the snapshot data. In particular, there should be a null-check for columns that are not nullable. Then, the date column should only contain valid dates, i.g. should only have values from the past and be not very distant. If there is a strict convention for the form of purchaseId, product or user values, these should also be validated.
+  - **Creation of partition columns out of date** As described above, I would partition the data based on the date, i.e. we need to extract the columns year, month and day out of the date column.
+  - **Versioning** Depending on the use case, one can implement versioning in different ways.
+    - **Option 1:** Use the time travel feature of the Delta Lakehouses. If the user want to see the snapshot of the table for a particular date, it can be done with the time travel feature of the delta format.
+    - **Option 2:** Add version-related columns to the table: `version, valid_from, valid_until`. The version describes the version number of the entry, the other two columns would describe from when to when the entry was valid. When a new entry is first inserted, its version is 1, the valid_from is equal to the date in the source column and the valid_until is null. When an update happens, the valid_until of the old entry becomes the date of the new one. The new entry gets an incremented value and other values are set as described earlier.
+
+- Building and saving the data model.
+  - To create the described layer structure the Lakehouse capabilities would be used, i.e. the tables would be registred in the Hive metastore or Unity Catalog. Unity Catalog has the advantage, that a fine-grained access for different user groups can be configured.
+
+- Generating a history of the data. For the delta time travel, one can see history of the table with the corresponding function: `spark.sql("DESCRIBE HISTORY stage.purchases")` and read the data for particular version using the options:
+  - Time travel to a specific version `spark.read.format("delta").option("versionAsOf", version_number).load("stage.purchases")`
+  - Time travel to a specific timestamp: `spark.read.format("delta").option("timestampAsOf", timestamp).load("stage.purchases")`
 
 
 ### Data Pipeline
