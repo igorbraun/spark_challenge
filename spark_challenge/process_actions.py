@@ -10,11 +10,13 @@ def main():
     EVENTS_PATH = "/home/igor/spark_challenge/data/events.csv"
 
     events = read_event_data(events_path=EVENTS_PATH)
+
+    print("Aggregated events:")
     aggregated_events = (
         reduce_events_granularity_to_10_min(events).sort("window_start").cache()
     )
+    aggregated_events.show(5)
     """
-    print(aggregated_events.show())
     +-----+----+-------------------+-------------------+
     |Close|Open|       window_start|         window_end|
     +-----+----+-------------------+-------------------+
@@ -22,11 +24,13 @@ def main():
     |   11| 147|2016-07-26 04:50:00|2016-07-26 05:00:00|
     |   19| 162|2016-07-26 05:00:00|2016-07-26 05:10:00|
     """
+
+    print("Row-wise average actions number:")
     row_wise_avg_actions_number = compute_avg_actions_number_per_window(
         aggregated_events
     )
+    row_wise_avg_actions_number.show(5)
     """
-    print(row_wise_avg_actions_number.show())
     +-----+----+-------------------+-------------------+-----------+
     |Close|Open|       window_start|         window_end|avg_actions|
     +-----+----+-------------------+-------------------+-----------+
@@ -34,16 +38,21 @@ def main():
     |   11| 147|2016-07-26 04:50:00|2016-07-26 05:00:00|       79.0|
     |   19| 162|2016-07-26 05:00:00|2016-07-26 05:10:00|       90.5|
     """
+
+    print("Total average actions number:")
     total_avg_actions_number = compute_total_avg_actions_number(aggregated_events)
+    total_avg_actions_number.show()
     """
-    print(total_avg_actions_number.show())
     +-----------------------------+
     |avg(total_actions_per_10_min)|
     +-----------------------------+
     |            319.4888178913738|
     +-----------------------------+
     """
+
+    print("Row with maximum of open actions:")
     max_open_actions_window = find_window_with_max_open_actions(aggregated_events)
+    max_open_actions_window.show()
     """
     print(max_open_actions_window.show())
     +-----+----+-------------------+-------------------+
